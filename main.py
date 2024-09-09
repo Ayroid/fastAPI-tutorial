@@ -1,8 +1,8 @@
 from typing import List
 from uuid import UUID, uuid4
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
-from models import Gender, Role, User
+from models import Gender, Role, User, UserUpdateRequest
 
 app = FastAPI()
 
@@ -46,9 +46,22 @@ async def register_user(user: User):
     return user
 
 
+@app.put("/api/v1/users/{user_id}")
+async def update_user(user_id: UUID, user_update: UserUpdateRequest):
+    for user in db:
+        if user.id == user_id:
+            user.first_name = user_update.first_name
+            user.last_name = user_update.last_name
+            user.middle_name = user_update.middle_name
+            user.roles = user_update.roles
+            return user
+    raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+
+
 @app.delete("/api/v1/users/{user_id}")
 async def delete_user(user_id: UUID):
     for user in db:
         if user.id == user_id:
             db.remove(user)
             return {"message": "User deleted"}
+    raise HTTPException(status_code=404, detail=f"User {user_id} not found")
